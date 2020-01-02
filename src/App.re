@@ -1,20 +1,54 @@
-let component = ReasonReact.statelessComponent("Component1");
+type state = {
+  attemptedWord: string,
+  score: int,
+  words: array(string),
+};
 
-let correctWord = "Every";
-let words = [|"Hello", "Every", "World"|];
+type action =
+  | Change(string);
 
-let handleChange = (event, _self) => Js.log(ReactEvent.Form.target(event)##value);
+let component = ReasonReact.reducerComponent("App");
 
-let filterWords = attemptedWord => Belt.Array.keep(words, word => word != attemptedWord);
+let allWords = [|"Hello", "Every", "World"|];
 
-let renderWords = wordsArray => 
-  Array.map(word => <div>(ReasonReact.string(word))</div>, wordsArray);
+let filterWords = (~attemptedWord, ~words) =>
+  Belt.Array.keep(words, word => word != attemptedWord);
 
-let make = (_children) => {
+let renderWords = wordsArray =>
+  Array.map(word => <div> {ReasonReact.string(word)} </div>, wordsArray);
+
+let make = _children => {
   ...component,
-  render: self =>
+
+  initialState: () => {attemptedWord: "", score: 0, words: allWords},
+
+  reducer: action =>
+    switch (action) {
+    | Change(attemptedWord) => (
+        state => {
+          let {words, score} = state;
+          let filtered = filterWords(~attemptedWord, ~words);
+          let isCorrect = Array.length(filtered) < Array.length(words);
+
+          ReasonReact.Update({
+            attemptedWord: isCorrect ? "" : attemptedWord,
+            words: filtered,
+            score: isCorrect ? score + 1 : score,
+          });
+        }
+      )
+    },
+
+  render: ({state: {score, words, attemptedWord}, send}) =>
     <div>
-      <div>...(correctWord -> filterWords -> renderWords)</div>
-      <input onChange=(self.handle(handleChange)) />
+      <div> {ReasonReact.string(string_of_int(score))} </div>
+      <div> ...{renderWords(words)} </div>
+      <input
+        type_="text"
+        value=attemptedWord
+        onChange={event =>
+          send(Change(ReactEvent.Form.target(event)##value))
+        }
+      />
     </div>,
 };
