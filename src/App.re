@@ -9,7 +9,7 @@ type action =
 
 let component = ReasonReact.reducerComponent("App");
 
-let allWords = [|"Hello", "Every", "World"|];
+let allWords = RandomWords.getMultiple(~count=7);
 
 let filterWords = (~attemptedWord, ~words) =>
   Belt.Array.keep(words, word => word != attemptedWord);
