@@ -7,18 +7,23 @@
 //   | None => ()
 //   };
 
+// This could help to understanf options/maybes
+// https://github.com/reasonml/reason-react/blob/master/docs/react-ref.md
+
 type state = {
   time: int,
   timerId: Js.Global.intervalId,
 };
 
+type retainedProps = {shouldCount: bool};
+
 type action =
   | SetTimer(Js.Global.intervalId)
   | Tick;
 
-let component = ReasonReact.reducerComponent("Counter");
+let component = ReasonReact.reducerComponentWithRetainedProps("Counter");
 
-let make = (~onFinish, ~initialTime=60, _children) => {
+let make = (~onFinish, ~initialTime=60, ~shouldCount=true, _children) => {
   ...component,
 
   initialState: () => {
@@ -43,10 +48,21 @@ let make = (~onFinish, ~initialTime=60, _children) => {
       )
     },
 
-  didMount: ({send}) => {
-    let intervalId = Js.Global.setInterval(() => send(Tick), 1000);
-    send(SetTimer(intervalId));
+  didMount: ({send}) =>
+    if (shouldCount) {
+      let intervalId = Js.Global.setInterval(() => send(Tick), 1000);
+      send(SetTimer(intervalId));
+    },
+
+  retainedProps: {
+    shouldCount: shouldCount,
   },
+  didUpdate: ({oldSelf, newSelf}) =>
+    if (oldSelf.retainedProps.shouldCount !== newSelf.retainedProps.shouldCount
+        && newSelf.retainedProps.shouldCount) {
+      let intervalId = Js.Global.setInterval(() => newSelf.send(Tick), 1000);
+      newSelf.send(SetTimer(intervalId));
+    },
 
   willUnmount: ({state: {timerId}}) => Js.Global.clearInterval(timerId),
 
