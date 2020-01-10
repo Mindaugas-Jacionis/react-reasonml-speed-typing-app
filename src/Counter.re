@@ -1,18 +1,6 @@
-// bellow commented maybe pattern to apply for timer id
-// type timerOption = option(Js.Global.intervalId);
-
-// let doSomething = (timerIdO: timerOption) =>
-//   switch (timerIdO) {
-//   | Some(timerId) => Js.log(timerId)
-//   | None => ()
-//   };
-
-// This could help to understanf options/maybes
-// https://github.com/reasonml/reason-react/blob/master/docs/react-ref.md
-
 type state = {
   time: int,
-  timerId: Js.Global.intervalId,
+  timerId: option(Js.Global.intervalId),
 };
 
 type retainedProps = {shouldCount: bool};
@@ -21,25 +9,30 @@ type action =
   | SetTimer(Js.Global.intervalId)
   | Tick;
 
+let clearInterval = id =>
+  switch (id) {
+  | None => ()
+  | Some(id) => Js.Global.clearInterval(id)
+  };
+
 let component = ReasonReact.reducerComponentWithRetainedProps("Counter");
 
 let make = (~onFinish, ~initialTime=60, ~shouldCount=true, _children) => {
   ...component,
 
-  initialState: () => {
-    time: initialTime,
-    timerId: Js.Global.setInterval(() => (), 1000),
-  },
+  initialState: () => {time: initialTime, timerId: None},
 
   reducer: action =>
     switch (action) {
-    | SetTimer(timerId) => (state => ReasonReact.Update({...state, timerId}))
+    | SetTimer(timerId) => (
+        state => ReasonReact.Update({...state, timerId: Some(timerId)})
+      )
     | Tick => (
         state => {
           let updatedTime = state.time - 1;
 
           if (updatedTime == 0) {
-            Js.Global.clearInterval(state.timerId);
+            clearInterval(state.timerId);
             onFinish();
           };
 
@@ -64,7 +57,7 @@ let make = (~onFinish, ~initialTime=60, ~shouldCount=true, _children) => {
       newSelf.send(SetTimer(intervalId));
     },
 
-  willUnmount: ({state: {timerId}}) => Js.Global.clearInterval(timerId),
+  willUnmount: ({state: {timerId}}) => clearInterval(timerId),
 
   render: ({state: {time}}) =>
     <div> {ReasonReact.string("Time left: " ++ string_of_int(time))} </div>,
