@@ -1,21 +1,21 @@
 type route =
+  | Register
   | GamePlay
   | NotFound;
 
-type state = {route};
+type player = {
+  name: string,
+  email: string,
+};
+
+type state = {
+  route,
+  player: option(player),
+};
 
 type action =
+  | RegisterPlayer(player)
   | ChangeRoute(route);
-
-let reducer = (action, _state) =>
-  switch (action) {
-  | ChangeRoute(route) =>
-    ReasonReact.Update(
-      {
-        route;
-      },
-    )
-  };
 
 let component = ReasonReact.reducerComponent("App");
 
@@ -23,6 +23,7 @@ let mapUrlToRoute = (url: ReasonReact.Router.url) =>
   switch (url.path) {
   | []
   | ["game"] => GamePlay
+  | ["register"] => Register
   | _ => NotFound
   };
 
@@ -38,16 +39,20 @@ let make = _children => {
 
   initialState: () => {
     route: mapUrlToRoute(ReasonReactRouter.dangerouslyGetInitialUrl()),
+    player: None,
   },
 
-  reducer: (action, _state) =>
+  reducer: (action, state) =>
     switch (action) {
-    | ChangeRoute(route) => ReasonReact.Update({route: route})
+    | RegisterPlayer(player) =>
+      ReasonReact.Update({...state, player: Some(player)})
+    | ChangeRoute(route) => ReasonReact.Update({...state, route})
     },
 
   render: ({state: {route}}) =>
     <div>
       {switch (route) {
+       | Register => <Register />
        | GamePlay => <Game />
        | NotFound => <PageNotFound />
        }}

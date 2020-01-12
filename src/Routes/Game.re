@@ -94,6 +94,20 @@ let make = _children => {
       )
     },
 
+  // didMount: _self => {
+  //   Js.log("player");
+  //   Js.log(player);
+
+  //   if (!player.name && !player.email) {
+  //     Js.log(
+  //       "no no player",
+  //       // ReasonReactRouter.replace("register");
+  //     );
+  //   } else {
+  //     Js.log("has has player");
+  //   };
+  // },
+
   render:
     ({state: {score, words, attempted, attemptedWord, isFinished}, send}) =>
     <div style=Styles.container>
